@@ -8,15 +8,21 @@ import cv2
 import os
 os.environ['GPIOZERO_PIN_FACTORY'] = os.environ.get('GPIOZERO_PIN_FACTORY', 'mock')
 import gpiozero
+import Adafruit_ADS1x15
+adc = Adafruit_ADS1x15.ADS1115()
 from gpiozero import LED
 from gpiozero import Buzzer
 from tkinter import *
 from threading import Timer
 import datetime
 now = datetime.datetime.now()
-#defining the midpoints for the image processing code
+length = []
 def midpoint(ptA, ptB):
 	return ((ptA[0] + ptB[0]) * 0.5, (ptA[1] + ptB[1]) * 0.5)
+
+cam = cv2.VideoCapture(0)
+frame = cam.read()[1]
+cv2.imwrite('img2.png', frame)
 
 # load the image, convert it to grayscale, blur it slightly, and threshold the picture to complete black and white
 image = cv2.imread('desktop/silvercarp.jpg')
@@ -29,71 +35,60 @@ ret,thresh1 = cv2.threshold(gray,30,255,cv2.THRESH_BINARY)
 edged = cv2.Canny(thresh1, 50, 100)
 edged = cv2.dilate(edged, None, iterations=1)
 edged = cv2.erode(edged, None, iterations=1)
- 
+    
 # find contours in the edge map
 cnts = cv2.findContours(edged.copy(), cv2.RETR_EXTERNAL,
-	cv2.CHAIN_APPROX_SIMPLE)
+    cv2.CHAIN_APPROX_SIMPLE)
 cnts = imutils.grab_contours(cnts)
-	
+        
 # sort the contours from left-to-right and initialize the
 # 'pixels per metric' calibration variable
 # compute it as the ratio of pixels to supplied metric
-	# (in this case, cm)
+    # (in this case, cm)
 (cnts, _) = contours.sort_contours(cnts)
 pixelsPerMetric = 7
 
 # loop over the contours individually
 for c in cnts:
-	# if the contour is not sufficiently large, ignore it
-	if cv2.contourArea(c) < 100:
-		continue
-	# compute the rotated bounding box of the contour
-	orig = image.copy()
-	box = cv2.minAreaRect(c)
-	box = cv2.cv.BoxPoints(box) if imutils.is_cv2() else cv2.boxPoints(box)
-	box = np.array(box, dtype="int")
-	
-	# unpack the ordered bounding box, then compute the midpoint
-	# between the top-left and top-right coordinates, followed by
-	# the midpoint between bottom-left and bottom-right coordinates
-	(tl, tr, br, bl) = box
-	(tltrX, tltrY) = midpoint(tl, tr)
-	(blbrX, blbrY) = midpoint(bl, br)
-	# compute the midpoint between the top-left and top-right points,
-	# followed by the midpoint between the top-righ and bottom-right
-	(tlblX, tlblY) = midpoint(tl, bl)
-	(trbrX, trbrY) = midpoint(tr, br)
+    # if the contour is not sufficiently large, ignore it
+    if cv2.contourArea(c) < 100:
+        continue
+    # compute the rotated bounding box of the contour
+    orig = image.copy()
+    box = cv2.minAreaRect(c)
+    box = cv2.cv.BoxPoints(box) if imutils.is_cv2() else cv2.boxPoints(box)
+    box = np.array(box, dtype="int")
+        
+    # unpack the ordered bounding box, then compute the midpoint
+    # between the top-left and top-right coordinates, followed by
+    # the midpoint between bottom-left and bottom-right coordinates
+    (tl, tr, br, bl) = box
+    (tltrX, tltrY) = midpoint(tl, tr)
+    (blbrX, blbrY) = midpoint(bl, br)
+    # compute the midpoint between the top-left and top-right points,
+    # followed by the midpoint between the top-righ and bottom-right
+    (tlblX, tlblY) = midpoint(tl, bl)
+    (trbrX, trbrY) = midpoint(tr, br)
 
-	# draw the midpoints on the image
-	cv2.circle(orig, (int(tltrX), int(tltrY)), 5, (255, 0, 0), -1)
-	cv2.circle(orig, (int(blbrX), int(blbrY)), 5, (255, 0, 0), -1)
-	cv2.circle(orig, (int(tlblX), int(tlblY)), 5, (255, 0, 0), -1)
-	cv2.circle(orig, (int(trbrX), int(trbrY)), 5, (255, 0, 0), -1)
+    # draw the midpoints on the image
+    cv2.circle(orig, (int(tltrX), int(tltrY)), 5, (255, 0, 0), -1)
+    cv2.circle(orig, (int(blbrX), int(blbrY)), 5, (255, 0, 0), -1)
+    cv2.circle(orig, (int(tlblX), int(tlblY)), 5, (255, 0, 0), -1)
+    cv2.circle(orig, (int(trbrX), int(trbrY)), 5, (255, 0, 0), -1)
 
-	# compute the Euclidean distance between the midpoints
-	dB = dist.euclidean((tlblX, tlblY), (trbrX, trbrY))
+    # compute the Euclidean distance between the midpoints
+    dB = dist.euclidean((tlblX, tlblY), (trbrX, trbrY))
 
-	# compute the size of the object
-	dimB = dB / pixelsPerMetric
-<<<<<<< HEAD
-#declering variables
-=======
-	
->>>>>>> e23a419e70d5b39eb7af07b03234abd8aab3788f
-watertemp = 18
-length = []
+    # compute the size of the object
+    dimB = dB / pixelsPerMetric
+
 length.append(dimB)
+
+
 avglength = np.mean(length)
 fweight = 0.0065*avglength**(3.157)
-<<<<<<< HEAD
-#making the gui flash red and white in case of short
-#this part changes the color to red, waits 1 sec and then runs "scircuitcolor", which
-#changes the color back to white and runs "scircuit" again, in an infinite loop
-#there is no exit condition since that the fix requires turning off the pi, which will restart the software
-=======
 buzzer = Buzzer(20)
 relay = LED(21)
->>>>>>> e23a419e70d5b39eb7af07b03234abd8aab3788f
 def scircuit():
     activelab.config(text="Short Circuit!!")
     flelab.config(background='red')
@@ -140,6 +135,10 @@ def feedfinish():
     activelab.config(text="Working!")
     relay.off()
 
+def tempadc():
+    watertemp = adc.read_adc(0, gain=2/3)
+    wtempvar.config(text=(watertemp,'C'))
+    master.after(5000, tempadc)
 #constructing the gui
 #declering the master window
 master = Tk() 
@@ -155,9 +154,9 @@ fwevar = Label(master, text=(int(fweight) / 1000 ,'Kg'), font=("Arial", 36))
 fwevar.grid(row=1,column=1)
 wtemplab = Label(master, text='Water Temperature:',  font=("Arial", 36))
 wtemplab.grid(row=2) 
-wtempvar = Label(master, text=(watertemp,'C'), font=("Arial", 36))
+wtempvar = Label(master, text='checking...', font=("Arial", 36))
 wtempvar.grid(row=2,column=1)  
-datelab = Label(master, text='Date:',  font=("Arial", 36))
+datelab= Label(master, text='Date:',  font=("Arial", 36))
 datelab.grid(row=3)  
 datevar = Label(master, text= now.strftime('%d/%m/%Y'), font=("Arial", 36))
 datevar.grid(row=3,column=1)
@@ -182,6 +181,9 @@ def clock():
 #running the clock function
 clock()
 #feeding
-if datetime.datetime.now().hour == 12:
-	feeder()
+def feedcheck():
+    if datetime.datetime.now().hour == 12:
+	    feeder()
+    master.after(1000,feedcheck)
+
 master.mainloop() 
