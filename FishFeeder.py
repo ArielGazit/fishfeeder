@@ -3,20 +3,14 @@ from scipy.spatial import distance as dist
 from imutils import perspective
 from imutils import contours
 import numpy as np
-import argparse
 import imutils
 import cv2 
 from tkinter import *
 import datetime
 now = datetime.datetime.now()
+#defining the midpoints for the image processing code
 def midpoint(ptA, ptB):
 	return ((ptA[0] + ptB[0]) * 0.5, (ptA[1] + ptB[1]) * 0.5)
- 
-# construct the argument parse and parse the arguments
-ap = argparse.ArgumentParser()
-ap.add_argument("-i", "--image", required=True,
-	help="path to the input image")
-args = vars(ap.parse_args())
 
 # load the image, convert it to grayscale, blur it slightly, and threshold the picture to complete black and white
 image = cv2.imread(args["image"])
@@ -95,7 +89,7 @@ for c in cnts:
 
     # compute the size of the object
 	dimB = dB / pixelsPerMetric
-#declering veriables 
+#declering variables
 watertemp = 18
 length = []
 #calculating the mean length of the fish
@@ -106,7 +100,7 @@ fweight = 0.0065*avglength**(3.157)
 #making the gui flash red and white in case of short
 #this part changes the color to red, waits 1 sec and then runs "scircuitcolor", which
 #changes the color back to white and runs "scircuit" again, in an infinite loop
-#there is no exit condition since that the fix requires turning off the pi, which will restart the softwere
+#there is no exit condition since that the fix requires turning off the pi, which will restart the software
 def scircuit():
     errorlab.config(text="Short Circuit!!")
     flelab.config(background='red')
@@ -156,7 +150,7 @@ wtemplab = Label(master, text='Water Temperature:',  font=("Arial", 36))
 wtemplab.grid(row=2) 
 wtempvar = Label(master, text=(watertemp,'C'), font=("Arial", 36))
 wtempvar.grid(row=2,column=1)  
-datelab= Label(master, text='Date:',  font=("Arial", 36))
+datelab = Label(master, text='Date:',  font=("Arial", 36))
 datelab.grid(row=3)  
 datevar = Label(master, text= now.strftime('%d/%m/%Y'), font=("Arial", 36))
 datevar.grid(row=3,column=1)
