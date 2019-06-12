@@ -5,8 +5,6 @@ from imutils import contours
 import numpy as np
 import imutils
 import cv2
-import os
-os.environ['GPIOZERO_PIN_FACTORY'] = os.environ.get('GPIOZERO_PIN_FACTORY', 'mock')
 import gpiozero
 import Adafruit_ADS1x15
 adc = Adafruit_ADS1x15.ADS1115()
