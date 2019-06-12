@@ -20,69 +20,70 @@ length = []
 def midpoint(ptA, ptB):
 	return ((ptA[0] + ptB[0]) * 0.5, (ptA[1] + ptB[1]) * 0.5)
 
-cam = cv2.VideoCapture(0)
-frame = cam.read()[1]
-cv2.imwrite('img2.png', frame)
+def messure():
+    cam = cv2.VideoCapture(0)
+    frame = cam.read()[1]
+    cv2.imwrite('desktop/fish/silvercarp.jpg', frame)
 
-# load the image, convert it to grayscale, blur it slightly, and threshold the picture to complete black and white
-image = cv2.imread('desktop/silvercarp.jpg')
-gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-gray = cv2.GaussianBlur(gray, (7, 7), 0)
-ret,thresh1 = cv2.threshold(gray,30,255,cv2.THRESH_BINARY)
+    # load the image, convert it to grayscale, blur it slightly, and threshold the picture to complete black and white
+    image = cv2.imread('desktop/fish/silvercarp.jpg')
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    gray = cv2.GaussianBlur(gray, (7, 7), 0)
+    ret,thresh1 = cv2.threshold(gray,30,255,cv2.THRESH_BINARY)
 
-# perform edge detection, then perform a dilation + erosion to
-# close gaps in between object edges
-edged = cv2.Canny(thresh1, 50, 100)
-edged = cv2.dilate(edged, None, iterations=1)
-edged = cv2.erode(edged, None, iterations=1)
-    
-# find contours in the edge map
-cnts = cv2.findContours(edged.copy(), cv2.RETR_EXTERNAL,
-    cv2.CHAIN_APPROX_SIMPLE)
-cnts = imutils.grab_contours(cnts)
+    # perform edge detection, then perform a dilation + erosion to
+    # close gaps in between object edges
+    edged = cv2.Canny(thresh1, 50, 100)
+    edged = cv2.dilate(edged, None, iterations=1)
+    edged = cv2.erode(edged, None, iterations=1)
         
-# sort the contours from left-to-right and initialize the
-# 'pixels per metric' calibration variable
-# compute it as the ratio of pixels to supplied metric
-    # (in this case, cm)
-(cnts, _) = contours.sort_contours(cnts)
-pixelsPerMetric = 7
+    # find contours in the edge map
+    cnts = cv2.findContours(edged.copy(), cv2.RETR_EXTERNAL,
+        cv2.CHAIN_APPROX_SIMPLE)
+    cnts = imutils.grab_contours(cnts)
+            
+    # sort the contours from left-to-right and initialize the
+    # 'pixels per metric' calibration variable
+    # compute it as the ratio of pixels to supplied metric
+        # (in this case, cm)
+    (cnts, _) = contours.sort_contours(cnts)
+    pixelsPerMetric = 7
 
-# loop over the contours individually
-for c in cnts:
-    # if the contour is not sufficiently large, ignore it
-    if cv2.contourArea(c) < 100:
-        continue
-    # compute the rotated bounding box of the contour
-    orig = image.copy()
-    box = cv2.minAreaRect(c)
-    box = cv2.cv.BoxPoints(box) if imutils.is_cv2() else cv2.boxPoints(box)
-    box = np.array(box, dtype="int")
-        
-    # unpack the ordered bounding box, then compute the midpoint
-    # between the top-left and top-right coordinates, followed by
-    # the midpoint between bottom-left and bottom-right coordinates
-    (tl, tr, br, bl) = box
-    (tltrX, tltrY) = midpoint(tl, tr)
-    (blbrX, blbrY) = midpoint(bl, br)
-    # compute the midpoint between the top-left and top-right points,
-    # followed by the midpoint between the top-righ and bottom-right
-    (tlblX, tlblY) = midpoint(tl, bl)
-    (trbrX, trbrY) = midpoint(tr, br)
+    # loop over the contours individually
+    for c in cnts:
+        # if the contour is not sufficiently large, ignore it
+        if cv2.contourArea(c) < 100:
+            continue
+        # compute the rotated bounding box of the contour
+        orig = image.copy()
+        box = cv2.minAreaRect(c)
+        box = cv2.cv.BoxPoints(box) if imutils.is_cv2() else cv2.boxPoints(box)
+        box = np.array(box, dtype="int")
+            
+        # unpack the ordered bounding box, then compute the midpoint
+        # between the top-left and top-right coordinates, followed by
+        # the midpoint between bottom-left and bottom-right coordinates
+        (tl, tr, br, bl) = box
+        (tltrX, tltrY) = midpoint(tl, tr)
+        (blbrX, blbrY) = midpoint(bl, br)
+        # compute the midpoint between the top-left and top-right points,
+        # followed by the midpoint between the top-righ and bottom-right
+        (tlblX, tlblY) = midpoint(tl, bl)
+        (trbrX, trbrY) = midpoint(tr, br)
 
-    # draw the midpoints on the image
-    cv2.circle(orig, (int(tltrX), int(tltrY)), 5, (255, 0, 0), -1)
-    cv2.circle(orig, (int(blbrX), int(blbrY)), 5, (255, 0, 0), -1)
-    cv2.circle(orig, (int(tlblX), int(tlblY)), 5, (255, 0, 0), -1)
-    cv2.circle(orig, (int(trbrX), int(trbrY)), 5, (255, 0, 0), -1)
+        # draw the midpoints on the image
+        cv2.circle(orig, (int(tltrX), int(tltrY)), 5, (255, 0, 0), -1)
+        cv2.circle(orig, (int(blbrX), int(blbrY)), 5, (255, 0, 0), -1)
+        cv2.circle(orig, (int(tlblX), int(tlblY)), 5, (255, 0, 0), -1)
+        cv2.circle(orig, (int(trbrX), int(trbrY)), 5, (255, 0, 0), -1)
 
-    # compute the Euclidean distance between the midpoints
-    dB = dist.euclidean((tlblX, tlblY), (trbrX, trbrY))
+        # compute the Euclidean distance between the midpoints
+        dB = dist.euclidean((tlblX, tlblY), (trbrX, trbrY))
 
-    # compute the size of the object
-    dimB = dB / pixelsPerMetric
+        # compute the size of the object
+        dimB = dB / pixelsPerMetric
 
-length.append(dimB)
+    length.append(dimB)
 
 
 avglength = np.mean(length)
@@ -95,8 +96,6 @@ def scircuit():
     flevar.config(background='red')
     fwelab.config(background='red')
     fwevar.config(background='red')
-    wtemplab.config(background='red')
-    wtempvar.config(background='red')
     datelab.config(background='red')
     datevar.config(background='red')
     timelab.config(background='red')
@@ -111,8 +110,6 @@ def scircuitcolor():
     flevar.config(background='white')
     fwelab.config(background='white')
     fwevar.config(background='white')
-    wtemplab.config(background='white')
-    wtempvar.config(background='white')
     datelab.config(background='white')
     datevar.config(background='white')
     timelab.config(background='white')
@@ -135,10 +132,11 @@ def feedfinish():
     activelab.config(text="Working!")
     relay.off()
 
-def tempadc():
-    watertemp = adc.read_adc(0, gain=2/3)
-    wtempvar.config(text=(watertemp,'C'))
-    master.after(5000, tempadc)
+def fishcheck():
+    lightlevel = adc.read_adc(0, gain=1)
+    if lightlevel > 10000 :
+        messure()
+    master.after(500, fishcheck)
 #constructing the gui
 #declering the master window
 master = Tk() 
@@ -152,26 +150,22 @@ fwelab = Label(master, text='Fish Weight:',  font=("Arial", 36))
 fwelab.grid(row=1) 
 fwevar = Label(master, text=(int(fweight) / 1000 ,'Kg'), font=("Arial", 36))
 fwevar.grid(row=1,column=1)
-wtemplab = Label(master, text='Water Temperature:',  font=("Arial", 36))
-wtemplab.grid(row=2) 
-wtempvar = Label(master, text='checking...', font=("Arial", 36))
-wtempvar.grid(row=2,column=1)  
 datelab= Label(master, text='Date:',  font=("Arial", 36))
-datelab.grid(row=3)  
+datelab.grid(row=2)  
 datevar = Label(master, text= now.strftime('%d/%m/%Y'), font=("Arial", 36))
-datevar.grid(row=3,column=1)
+datevar.grid(row=2,column=1)
 timelab = Label(master, text='Time:', font=("Arial", 36))
-timelab.grid(row=4,column=0)
+timelab.grid(row=3,column=0)
 w = Label(master, text= now.strftime("%H:%M:%S"), font=("Arial", 36))
-w.grid(row=4,column=1)
+w.grid(row=3,column=1)
 erlab = Label(master, text='State:', font=("Arial", 36))
-erlab.grid(row=5)
+erlab.grid(row=4)
 activelab = Label(master, text='Working!',font=("Arial", 36))
-activelab.grid(row=5,column=1)
+activelab.grid(row=4,column=1)
 sbutton = Button(master, text= 'Short!', command= scircuit)
-sbutton.grid(row=6)
+sbutton.grid(row=5)
 feedbutton = Button(master, text='Feed!', command= feeder)
-feedbutton.grid(row=6,column=1)
+feedbutton.grid(row=5,column=1)
 #defining the clock in the gui
 def clock():
     time = datetime.datetime.now().strftime("%H:%M:%S")
