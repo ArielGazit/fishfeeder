@@ -15,6 +15,8 @@ from threading import Timer
 import datetime
 now = datetime.datetime.now()
 length = []
+global fweight
+global avglength
 def midpoint(ptA, ptB):
 	return ((ptA[0] + ptB[0]) * 0.5, (ptA[1] + ptB[1]) * 0.5)
 
@@ -82,10 +84,13 @@ def messure():
         dimB = dB / pixelsPerMetric
 
     length.append(dimB)
+    avglength = np.mean(length)
+    fweight = 0.0065*avglength**(3.157)
+    flevar.config(text=("%0.2f" % avglength, 'cm'))
+    fwevar.config(text=(int(fweight) / 1000, 'Kg'))
 
-
-avglength = np.mean(length)
-fweight = 0.0065*avglength**(3.157)
+lightsensor = LED(16)
+lightsensor.on()
 buzzer = Buzzer(20)
 relay = LED(21)
 def scircuit():
@@ -124,6 +129,8 @@ def scircuitcolor():
 def feeder():
     relay.on()
     activelab.config(text="Feeding...")
+    avglength = np.mean(length)
+    fweight = 0.0065*avglength**(3.157)
     master.after(int(fweight), feedfinish)
 #turning the feeding relay off
 def feedfinish():
@@ -134,6 +141,8 @@ def fishcheck():
     lightlevel = adc.read_adc(0, gain=1)
     if lightlevel > 10000 :
         messure()
+    if lightlevel < 1000 :
+        scircuit()
     master.after(500, fishcheck)
 #constructing the gui
 #declering the master window
@@ -142,11 +151,11 @@ master = Tk()
 flelab = Label(master, text='Fish Length:',  font=("Arial", 36))
 #declering the location of the labels
 flelab.grid(row=0) 
-flevar = Label(master, text=("%0.2f" % avglength,'cm'), font=("Arial", 36))
+flevar = Label(master, text='Waiting...', font=("Arial", 36))
 flevar.grid(row=0,column=1) 
 fwelab = Label(master, text='Fish Weight:',  font=("Arial", 36))
 fwelab.grid(row=1) 
-fwevar = Label(master, text=(int(fweight) / 1000 ,'Kg'), font=("Arial", 36))
+fwevar = Label(master, text='Waiting...', font=("Arial", 36))
 fwevar.grid(row=1,column=1)
 datelab= Label(master, text='Date:',  font=("Arial", 36))
 datelab.grid(row=2)  
@@ -168,7 +177,7 @@ feedbutton.grid(row=5,column=1)
 def clock():
     time = datetime.datetime.now().strftime("%H:%M:%S")
     w.config(text=time)
-    
+    datevar.config(now.strftime('%d/%m/%Y'))
     master.after(1000, clock) # run itself again after 1000 ms
 #running the clock function
 clock()
@@ -176,6 +185,6 @@ clock()
 def feedcheck():
     if datetime.datetime.now().hour == 12:
 	    feeder()
-    master.after(1000,feedcheck)
+    master.after(3600000, feedcheck)
 
 master.mainloop() 
